@@ -1,11 +1,12 @@
 buildscript {
     repositories {
+        google()
         mavenCentral()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath 'com.android.tools.build:gradle:3.3.2'
     }
 }
 
@@ -18,8 +19,10 @@ version          = version_number
 group            = group_info
 
 repositories {
+    google()
     mavenCentral()
     mavenLocal()
+    jcenter()
 }
 
 dependencies {
@@ -32,23 +35,17 @@ dependencies {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.3'
+    buildToolsVersion '28.0.3'
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 16
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_7
         targetCompatibility JavaVersion.VERSION_1_7
     }
-
-    libraryVariants.all { variant ->
-        variant.outputs.each { output ->
-            def outputFile = output.outputFile
-            if (outputFile != null && outputFile.name.endsWith('.aar')) {
-                def fileName = "${archivesBaseName}-${version}.aar"
-                output.outputFile = new File(outputFile.parent, fileName)
-            }
-        }
-    }
-
 }
 
 tasks.whenTaskAdded { task ->
