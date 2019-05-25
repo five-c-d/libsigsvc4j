@@ -7,11 +7,12 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.3.2'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
+apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'signing'
 
 archivesBaseName = "signal-service-android"
@@ -75,53 +76,5 @@ def getRepositoryPassword() {
 signing {
     required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
     sign configurations.archives
-}
-
-uploadArchives {
-    configuration = configurations.archives
-    repositories.mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-        repository(url: getReleaseRepositoryUrl()) {
-            authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-        }
-
-        pom.project {
-            name 'signal-service-android'
-            packaging 'aar'
-            description 'Signal Service communication library for Android'
-            url 'https://github.com/WhisperSystems/libsignal-service-java'
-
-            scm {
-                url 'scm:git@github.com:WhisperSystems/libsignal-service-java.git'
-                connection 'scm:git@github.com:WhisperSystems/libsignal-service-java.git'
-                developerConnection 'scm:git@github.com:WhisperSystems/libsignal-service-java.git'
-            }
-
-            licenses {
-                license {
-                    name 'GPLv3'
-                    url 'https://www.gnu.org/licenses/gpl-3.0.txt'
-                    distribution 'repo'
-                }
-            }
-
-            developers {
-                developer {
-                    name 'Moxie Marlinspike'
-                }
-            }
-        }
-    }
-}
-
-task installArchives(type: Upload) {
-    description "Installs the artifacts to the local Maven repository."
-    configuration = configurations['archives']
-    repositories {
-        mavenDeployer {
-            repository url: "file://${System.properties['user.home']}/.m2/repository"
-        }
-    }
 }
 
