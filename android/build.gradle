@@ -49,12 +49,6 @@ android {
     }
 }
 
-tasks.whenTaskAdded { task ->
-    if (task.name.equals("lint")) {
-        task.enabled = false
-    }
-}
-
 def isReleaseBuild() {
     return version.contains("SNAPSHOT") == false
 }
