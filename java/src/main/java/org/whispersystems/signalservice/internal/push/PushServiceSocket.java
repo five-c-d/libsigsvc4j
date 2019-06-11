@@ -74,9 +74,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -1021,10 +1024,17 @@ public class PushServiceSocket {
       SSLContext context = SSLContext.getInstance("TLS");
       context.init(null, trustManagers, null);
 
-      return new OkHttpClient.Builder()
+      OkHttpClient client =
+             new OkHttpClient.Builder()
                              .sslSocketFactory(new Tls12SocketFactory(context.getSocketFactory()), (X509TrustManager)trustManagers[0])
                              .connectionSpecs(url.getConnectionSpecs().or(Util.immutableList(ConnectionSpec.RESTRICTED_TLS)))
                              .build();
+      if (url.getUrl().contains("staging") && url.getUrl().endsWith(".signal.org")) {
+        client = client.newBuilder()
+                       .hostnameVerifier(new StagingHostnameVerifier())
+                       .build();
+      }
+      return client;
     } catch (NoSuchAlgorithmException | KeyManagementException e) {
       throw new AssertionError(e);
     }
@@ -1158,5 +1168,20 @@ public class PushServiceSocket {
   private static class EmptyResponseCodeHandler implements ResponseCodeHandler {
     @Override
     public void handle(int responseCode) { }
+  }
+
+  private static class StagingHostnameVerifier implements HostnameVerifier {
+    private static final Pattern CN_PATTERN = Pattern.compile("(?<=CN=)([^,]+)");
+
+    @Override
+    public boolean verify(String host, SSLSession session) {
+      try {
+        String dn = session.getPeerPrincipal().toString();
+        Matcher matcher = CN_PATTERN.matcher(dn);
+        return matcher.find() && host.equals(matcher.group());
+      } catch (SSLException ignore) {
+        return false;
+      }
+    }
   }
 }
